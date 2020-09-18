@@ -4,8 +4,8 @@ import { Form } from '@unform/web';
 import { FormHandles } from '@unform/core';
 import * as Yup from 'yup';
 
-
-import { useAuth } from '../../hooks/AuthContext';
+import { useToast} from '../../hooks/toast'
+import { useAuth } from '../../hooks/auth';
 import getValidationErrors from '../../utils/getValidationErrors'
 
 import logoImg from '../../assets/logo.svg';
@@ -26,6 +26,7 @@ const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
 
   const { user, signIn } = useAuth();
+  const { addToast } = useToast();
 
   console.log(user);
 
@@ -40,7 +41,7 @@ const SignIn: React.FC = () => {
       });
 
 
-      signIn({
+      await signIn({
         email: data.email,
         password: data.password,
       });
@@ -53,10 +54,19 @@ const SignIn: React.FC = () => {
 
 
     }catch(err){
-      const errors = getValidationErrors(err);
-      formRef.current?.setErrors(errors)
+      if (err instanceof Yup.ValidationError){
+        const errors = getValidationErrors(err);
+        formRef.current?.setErrors(errors)
+      }
+
+      addToast({
+        type: 'info',
+        title: 'Authentication error',
+        description: 'An error has occoured, check your credentials.',
+      });
+
     }
-  }, [signIn]);
+  }, [signIn, addToast]);
 
   return (
 
