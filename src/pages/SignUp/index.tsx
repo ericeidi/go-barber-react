@@ -4,22 +4,32 @@ import { FormHandles } from '@unform/core';
 import { Form } from '@unform/web';
 import * as Yup from 'yup';
 import getValidationErrors from '../../utils/getValidationErrors';
+import { Link, useHistory } from 'react-router-dom';
+import api  from '../../services/api';
 
 import logoImg from '../../assets/logo.svg';
 
-import { Container, Content, Background } from './styles';
+import { Container, Content, Background, AnimationContainer } from './styles';
 
 import Input from '../../components/Input';
 
 import Button from '../../components/Button';
 
+import { useToast } from '../../hooks/toast';
+
+interface SignUpFormData {
+  name: string;
+  email: string;
+  password: string;
+}
+
 const SignUp: React.FC = () => {
 
   const formRef = useRef<FormHandles>(null);
+  const { addToast } = useToast();
+  const history = useHistory();
 
-
-
-  const handleSubmit = useCallback(async (data: object) =>{
+  const handleSubmit = useCallback(async (data: SignUpFormData) =>{
     try{
       formRef.current?.setErrors({});
 
@@ -29,36 +39,61 @@ const SignUp: React.FC = () => {
         password: Yup.string().required('Password is required').min(6, 'Minimum of 6 digits'),
       });
 
+      await api.post ('/users', data);
+
       await schema.validate(data, {
         abortEarly: false,
       });
 
+
+
+      history.push('/');
+
+      addToast({
+        type: 'success',
+        title: 'Registered successfully!',
+        description: 'You can now login on GoBarber!',
+      })
+
     }catch(err){
-      const errors = getValidationErrors(err);
-      formRef.current?.setErrors(errors)
+       if (err instanceof Yup.ValidationError){
+        const errors = getValidationErrors(err);
+        formRef.current?.setErrors(errors)
+
+        return;
+      }
+
+      addToast({
+        type: 'error',
+        title: 'Sign up error',
+        description: 'An error has occoured, try again.',
+      });
+
     }
-  }, []);
+  }, [addToast, history]);
   return (
 
 
     <Container>
-      <Background />
-      <Content>
-        <img src={logoImg} alt="GoBarber" />
-        <Form ref={formRef} onSubmit={handleSubmit}>
-          <h1>Sign up</h1>
+        <Background />
+         <Content>
+          <AnimationContainer>
+          <img src={logoImg} alt="GoBarber" />
+          <Form ref={formRef} onSubmit={handleSubmit}>
+            <h1>Sign up</h1>
 
-          <Input name="name" icon={FiUser} placeholder="Name"/>
-          <Input name="email" icon={FiMail} placeholder="E-mail"/>
-          <Input name="password" icon={FiLock} type="password" placeholder="Password" />
-          <Button type="submit">Join now</Button>
+            <Input name="name" icon={FiUser} placeholder="Name"/>
+            <Input name="email" icon={FiMail} placeholder="E-mail"/>
+            <Input name="password" icon={FiLock} type="password" placeholder="Password" />
+            <Button type="submit">Join now</Button>
 
-        </Form>
+          </Form>
 
-        <a href="login">
-          <FiArrowLeft/>
-          Back to login page
-          </a>
+          <Link to="">
+            <FiArrowLeft/>
+            Back to login page
+            </Link>
+         </AnimationContainer>
       </Content>
 
 
